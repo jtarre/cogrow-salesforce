@@ -1,8 +1,13 @@
 var worker  = require('node_helper');
 var jsforce = require('jsforce');
 
-var campaignId, first, last, school, year;
-var candidateStatus, candidateId;
+var campaignId = worker.params.campaignId;
+var last       = worker.params.last;
+var email      = worker.params.email;
+var school      = worker.params.school;
+
+var first, year;
+var candidate, candidateId;
 
 
 var conn;
@@ -23,14 +28,19 @@ conn = new jsforce.Connection({
 conn.login(worker.config.USER_EMAIL, worker.config.PASSWORD, function(err, userInfo) {
 	if(err) {return console.error(err);}
 	console.log(userInfo);
-	// what would be the next thing
-	// well first i'd want to get campaign id and the vars.
 
-	// then i want to check if the candidate exists
-	// i also want to make sure that i can pass
-	// the connection value to a function and it will still work
+	var createCampaignMember = function createCampaignMember(conn, campaignId, candidateId) {
+		console.log("Let's make a campaign member!");
+		conn.sobject("CampaignMember").create({
+			CampaignId: campaignId,
+			LeadId: candidateId
+		}, function(err, ret) {
+			if (err) {console.error(err);}
+			console.log("campaign member", ret);
+		});
+	};
 
-	var createNewLead = function(conn, email, last, school) {
+	var createNewLead = function createNewLead(conn, email, last, school, campaignId, callback) {
 		conn.sobject("Lead").create({ 
 			LastName:  last,
 			Email:     email,
@@ -38,43 +48,30 @@ conn.login(worker.config.USER_EMAIL, worker.config.PASSWORD, function(err, userI
 		}, function(err, ret) {
 			if (err) {console.error(err); }
 			console.log("new lead return values", ret);
+			callback(conn, campaignId, ret.id)
 			// return ret.Id;
 		});
 	};
 
-	var checkCandidateStatus = function(conn, email) {
+	var getCandidate = function getCandidate(conn, email, last, school, campaignId, callback1, callback2) {
 		conn.sobject("Lead")
 			.find({
 				Email: email
 			}, "Id, Email, FirstName, LastName")
 			.execute( function (err, leads) {
-				console.log("leads", leads);
-				if(leads){
-					return leads[0].Id;
+				if(err) {console.error(err)};
+				console.log("leads exist?", leads);
+				if(leads.length){
+					callback1(conn, campaignId, leads[0].Id);
+					// return leads[0];
 				} else {
-					return false;
+					callback2(conn, email, last, school, campaignId, callback1);
+					// return false;
 				}
 			});
 	};
 
-	var createCampaignMember = function(conn, campaignId, candidateId) {
-		conn.sobject("CampaignMember").create({
-			CampaignId: campaignId,
-			Lead: candidateId
-		}, function(err, ret) {
-			if (err) {console.error(err);}
-			console.log("campaign member", ret);
-		});
-	};
-
-	candidateId = checkCandidateStatus(conn, "darrenadouglas@gmail.com");
-	if(!candidateId) {
-		candidateId = createNewLead(conn, "jason+cg1@ventureforamerica.org", "Tarre", "WashU");
-		createCampaignMember(conn, "701d0000001IkTj", "00Qd000000VApd7");
-	} else {
-		createCampaignMember(conn, "701d0000001IkTj", "00Qd000000VApd7");
-	}
-	// console.log("candidate exists?", candidateId);
+	candidate = getCandidate(conn, email, last, school, campaignId, createCampaignMember, createNewLead);
 });
 
 campaignId = worker.params.campaignId;
