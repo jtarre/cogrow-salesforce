@@ -1,2 +1,7 @@
 runtime "node"
 exec "cogrow_worker.js"
+file "package.json"
+
+stack "node-0.10"
+build "npm install"
+remote
