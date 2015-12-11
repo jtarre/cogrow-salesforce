@@ -1,0 +1,18 @@
+{
+  "name": "cogrow-salesforce",
+  "version": "1.0.0",
+  "description": "connect recruiting event data to salesforce campaigns and candidates",
+  "main": "cogrow_worker.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "salesforce",
+    "recruiting"
+  ],
+  "author": "Jason Tarre",
+  "license": "ISC",
+  "dependencies": {
+    "jsforce": "^1.5.0"
+  }
+}
