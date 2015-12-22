@@ -1,4 +1,4 @@
-var worker  = require('node_helper');
+	var worker  = require('node_helper');
 var jsforce = require('jsforce');
 
 var campaignId = worker.params.campaignId;
